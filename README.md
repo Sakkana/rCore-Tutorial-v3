@@ -245,6 +245,17 @@ _start:
 li x1, 100
 ```
 
+将该汇编代码硬编码成字符串插入主函数
+```rust
+#![no_std]
+#![no_main]
+
+mod lang_items;
+
+use core::arch::global_asm;
+global_asm!(include_str!("entry.asm"));
+```
+
 ### 编写链接脚本
 ```ld
 OUTPUT_ARCH(riscv)
@@ -494,3 +505,31 @@ $3 = 100
 符合预期，100被装进了 ra 寄存器。
 
 验证成功。
+
+
+## 启用 Stack
+在控制权被转交给 Rust 入口之前将栈指针 sp 设置为栈顶的位置。
+
+### 编写入口函数
+```asm
+    .section .text.entry
+    .globl _start
+
+_start:
+    la sp, boot_stack_top
+    call rust_main
+
+    .section .bss.stack
+
+    .globl boot_stack_floor
+boot_stack_floor:
+    .space 4096 * 16
+
+    .globl boot_stack_top
+boot_stack_top:
+```
+
+编写主函数
+```rust
+
+```
